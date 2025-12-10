@@ -125,7 +125,8 @@
             <div className="w-full max-w-md bg-white rounded-[2.5rem] shadow-xl overflow-hidden min-h-[80vh] flex flex-col relative">
               
               {/* Header */}
-              <div className="bg-blue-50 pt-10 pb-8 px-6 relative overflow-hidden flex flex-col items-center justify-center text-center">
+              {/* Changed bg-blue-50 to bg-blue-100 for deeper background */}
+              <div className="bg-blue-100 pt-10 pb-8 px-6 relative overflow-hidden flex flex-col items-center justify-center text-center">
                  <div className="absolute top-0 right-0 w-full h-full bg-gradient-to-b from-blue-100/50 to-transparent opacity-50 pointer-events-none" />
                  
                  <div className="relative z-10 flex flex-row items-center justify-center gap-2">
@@ -226,7 +227,7 @@
                           onChange={(e) => setDiscount(e.target.value)}
                           step="0.1"
                           className="w-full bg-transparent text-xl font-bold text-slate-800 outline-none placeholder:text-slate-300 min-w-0"
-                          placeholder="2.8"
+                          placeholder="例:2.8"
                         />
                         <span className="text-slate-400 font-medium text-sm ml-1 whitespace-nowrap">折</span>
                       </div>
