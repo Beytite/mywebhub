@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <base target="_top">
+    
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>台股證券損益試算</title>
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+      /* 自定義動畫與字型 */
+      @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700;900&display=swap');
+      body { font-family: 'Roboto', sans-serif; background-color: #f0f0f5; }
+      .animate-fade-in-up { animation: fadeInUp 0.5s ease-out forwards; opacity: 0; transform: translateY(20px); }
+      @keyframes fadeInUp { to { opacity: 1; transform: translateY(0); } }
+    </style>
+    
+    <script type="importmap">
+    {
+      "imports": {
+        "react": "https://esm.sh/react@18.2.0",
+        "react-dom/client": "https://esm.sh/react-dom@18.2.0/client",
+        "lucide-react": "https://esm.sh/lucide-react@0.292.0"
+      }
+    }
+    </script>
+    
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  </head>
+  <body>
+    <div id="root"></div>
+
+    <script type="text/babel" data-type="module">
+      import React, { useState } from 'react';
+      import { createRoot } from 'react-dom/client';
+      import { ArrowRightLeft, Calculator, TrendingUp, TrendingDown, RotateCcw, Percent, Check } from 'lucide-react';
+
+      function App() {
+        const [mode, setMode] = useState('long'); 
+        const [isDayTrade, setIsDayTrade] = useState(false); 
+        
+        const [priceIn, setPriceIn] = useState(''); 
+        const [priceOut, setPriceOut] = useState(''); 
+        const [volume, setVolume] = useState('1000'); 
+        const [discount, setDiscount] = useState(''); 
+        
+        const [result, setResult] = useState(null);
+
+        const FEE_RATE = 0.001425; 
+        const TAX_NORMAL = 0.003;  
+        const TAX_DAY = 0.0015;    
+
+        const handleCalculate = () => {
+          const pIn = parseFloat(priceIn);
+          const pOut = parseFloat(priceOut);
+          const vol = parseInt(volume);
+
+          if (isNaN(pIn) || isNaN(pOut) || isNaN(vol)) {
+            alert("請輸入正確的數字");
+            return;
+          }
+
+          let buyPriceTotal = 0;
+          let sellPriceTotal = 0;
+
+          if (mode === 'long') {
+            buyPriceTotal = pIn * vol;
+            sellPriceTotal = pOut * vol;
+          } else {
+            sellPriceTotal = pIn * vol;
+            buyPriceTotal = pOut * vol;
+          }
+
+          let discountMultiplier = 1;
+          const d = parseFloat(discount);
+          if (!isNaN(d) && d > 0) {
+            discountMultiplier = d / 10;
+          }
+
+          const fee = Math.floor((sellPriceTotal + buyPriceTotal) * FEE_RATE * discountMultiplier);
+          const currentTaxRate = isDayTrade ? TAX_DAY : TAX_NORMAL;
+          const tax = Math.floor(sellPriceTotal * currentTaxRate);
+          const grossProfit = sellPriceTotal - buyPriceTotal; 
+          const netProfit = grossProfit - fee - tax;          
+
+          const costBase = mode === 'long' ? buyPriceTotal : sellPriceTotal;
+          const roi = (netProfit / costBase) * 100;
+
+          setResult({
+            grossProfit,
+            fee,
+            tax,
+            netProfit,
+            roi: roi.toFixed(2),
+            discountDisplay: discountMultiplier < 1 ? `${d}折` : '無折扣'
+          });
+        };
+
+        const handleReset = () => {
+          setPriceIn('');
+          setPriceOut('');
+          setResult(null);
+        };
+
+        const formatCurrency = (val) => {
+          return new Intl.NumberFormat('zh-TW').format(val);
+        };
+
+        return (
+          <div className="min-h-screen bg-[#f2f2f7] py-6 px-4 font-sans text-slate-900 flex justify-center items-start">
+            <div className="w-full max-w-md bg-white rounded-[2.5rem] shadow-xl overflow-hidden min-h-[80vh] flex flex-col relative">
+              
+              {/* Header */}
+              <div className="pt-10 pb-4 px-8 bg-white">
+                <h1 className="text-3xl font-bold text-slate-900 flex items-center gap-2 leading-tight">
+                  證券交易損益試算
+                </h1>
+              </div>
+
+              <div className="flex-1 px-6 pb-10 overflow-y-auto">
+                
+                {/* Mode Switcher */}
+                <div className="bg-[#f2f2f7] p-1.5 rounded-full flex relative mb-6">
+                  <button
+                    onClick={() => { setMode('long'); setResult(null); }}
+                    className={`flex-1 py-3 rounded-full text-sm font-bold transition-all duration-300 relative z-10 ${
+                      mode === 'long' 
+                        ? 'bg-white text-red-600 shadow-md' 
+                        : 'text-slate-500 hover:text-slate-700'
+                    }`}
+                  >
+                    做多 (先買)
+                  </button>
+                  <button
+                    onClick={() => { setMode('short'); setResult(null); }}
+                    className={`flex-1 py-3 rounded-full text-sm font-bold transition-all duration-300 relative z-10 ${
+                      mode === 'short' 
+                        ? 'bg-white text-green-600 shadow-md' 
+                        : 'text-slate-500 hover:text-slate-700'
+                    }`}
+                  >
+                    做空 (先賣)
+                  </button>
+                </div>
+
+                {/* Cards Container */}
+                <div className="space-y-4">
+                  
+                  {/* Day Trade Toggle */}
+                  <div 
+                    className="flex items-center justify-between bg-white border border-slate-100 p-4 rounded-3xl shadow-sm cursor-pointer active:scale-[0.98] transition-transform"
+                    onClick={() => setIsDayTrade(!isDayTrade)}
+                  >
+                    <div className="flex flex-col">
+                      <span className="text-lg font-semibold text-slate-800">當沖交易</span>
+                      <span className="text-xs text-slate-500">稅率減半 0.15%</span>
+                    </div>
+                    <div className={`w-14 h-8 rounded-full p-1 transition-colors duration-300 ${isDayTrade ? 'bg-blue-500' : 'bg-slate-200'}`}>
+                      <div className={`w-6 h-6 bg-white rounded-full shadow-md transform transition-transform duration-300 ${isDayTrade ? 'translate-x-6' : 'translate-x-0'}`} />
+                    </div>
+                  </div>
+
+                  {/* Volume Input */}
+                  <div className="flex gap-3">
+                    <div className="flex-1 bg-[#f2f2f7] rounded-3xl p-5 transition-all focus-within:ring-2 focus-within:ring-blue-500/20">
+                      <label className="block text-xs font-bold text-slate-500 uppercase ml-1 mb-1">交易股數</label>
+                      <div className="flex items-baseline">
+                        <input
+                          type="number"
+                          value={volume}
+                          onChange={(e) => setVolume(e.target.value)}
+                          className="w-full bg-transparent text-xl font-bold text-slate-800 outline-none placeholder:text-slate-300 min-w-0"
+                          placeholder="1000"
+                        />
+                        <span className="text-slate-400 font-medium text-sm ml-1 whitespace-nowrap">股</span>
+                      </div>
+                    </div>
+
+                    <div className="flex-1 bg-[#f2f2f7] rounded-3xl p-5 transition-all focus-within:ring-2 focus-within:ring-blue-500/20 relative">
+                      <label className="block text-xs font-bold text-slate-500 uppercase ml-1 mb-1">
+                        手續費折數
+                      </label>
+                      <div className="flex items-baseline">
+                        <input
+                          type="number"
+                          value={discount}
+                          onChange={(e) => setDiscount(e.target.value)}
+                          step="0.1"
+                          className="w-full bg-transparent text-xl font-bold text-slate-800 outline-none placeholder:text-slate-300 min-w-0"
+                          placeholder="2.8"
+                        />
+                        <span className="text-slate-400 font-medium text-sm ml-1 whitespace-nowrap">折</span>
+                      </div>
+                      <p className="text-[10px] text-slate-400 mt-1 whitespace-nowrap overflow-hidden text-ellipsis">(請詢問營業員)</p>
+                    </div>
+                  </div>
+
+                  {/* Price Inputs Row */}
+                  <div className="flex gap-3">
+                    <div className={`flex-1 rounded-3xl p-5 transition-all ${mode === 'long' ? 'bg-red-50 focus-within:ring-2 focus-within:ring-red-200' : 'bg-green-50 focus-within:ring-2 focus-within:ring-green-200'}`}>
+                      <label className={`block text-xs font-bold uppercase ml-1 mb-1 ${mode === 'long' ? 'text-red-500' : 'text-green-500'}`}>
+                        {mode === 'long' ? '買進' : '賣出'}
+                      </label>
+                      <div className="flex items-baseline">
+                        <span className={`text-lg mr-1 ${mode === 'long' ? 'text-red-300' : 'text-green-300'}`}>$</span>
+                        <input
+                          type="number"
+                          value={priceIn}
+                          onChange={(e) => setPriceIn(e.target.value)}
+                          step="0.1"
+                          className={`w-full bg-transparent text-xl font-bold outline-none placeholder:text-slate-300 min-w-0 ${mode === 'long' ? 'text-red-700' : 'text-green-700'}`}
+                          placeholder="價格"
+                        />
+                        <span className={`text-sm ml-1 whitespace-nowrap ${mode === 'long' ? 'text-red-300' : 'text-green-300'}`}>/股</span>
+                      </div>
+                    </div>
+
+                    <div className={`flex-1 rounded-3xl p-5 transition-all ${mode === 'long' ? 'bg-green-50 focus-within:ring-2 focus-within:ring-green-200' : 'bg-red-50 focus-within:ring-2 focus-within:ring-red-200'}`}>
+                      <label className={`block text-xs font-bold uppercase ml-1 mb-1 ${mode === 'long' ? 'text-green-500' : 'text-red-500'}`}>
+                        {mode === 'long' ? '賣出' : '回補'}
+                      </label>
+                       <div className="flex items-baseline">
+                        <span className={`text-lg mr-1 ${mode === 'long' ? 'text-green-300' : 'text-red-300'}`}>$</span>
+                        <input
+                          type="number"
+                          value={priceOut}
+                          onChange={(e) => setPriceOut(e.target.value)}
+                          step="0.1"
+                          className={`w-full bg-transparent text-xl font-bold outline-none placeholder:text-slate-300 min-w-0 ${mode === 'long' ? 'text-green-700' : 'text-red-700'}`}
+                          placeholder="價格"
+                        />
+                        <span className={`text-sm ml-1 whitespace-nowrap ${mode === 'long' ? 'text-green-300' : 'text-red-300'}`}>/股</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Action Buttons */}
+                <div className="flex gap-3 mt-8 mb-6">
+                  <button
+                    onClick={handleReset}
+                    className="w-14 h-14 rounded-full bg-[#f2f2f7] text-slate-600 hover:bg-slate-200 flex items-center justify-center transition-colors shadow-sm"
+                    title="重置"
+                  >
+                    <RotateCcw size={24} />
+                  </button>
+                  <button
+                    onClick={handleCalculate}
+                    className="flex-1 h-14 rounded-full bg-blue-600 hover:bg-blue-700 text-white font-bold text-lg shadow-lg shadow-blue-200 active:scale-95 transition-all flex items-center justify-center gap-2"
+                  >
+                    試算
+                  </button>
+                </div>
+
+                {/* Result Card */}
+                {result && (
+                  <div className="animate-fade-in-up">
+                    <div className="bg-slate-50 border border-slate-200 rounded-[2rem] p-6 text-slate-800 shadow-sm relative overflow-hidden">
+                       {/* Decorative background circle */}
+                      <div className={`absolute -right-6 -top-6 w-24 h-24 rounded-full opacity-10 pointer-events-none ${result.netProfit > 0 ? 'bg-red-500' : result.netProfit < 0 ? 'bg-green-500' : 'bg-slate-500'}`} />
+
+                      <div className="flex justify-between items-start mb-4 relative z-10">
+                        <div>
+                          <p className="text-slate-500 text-sm font-medium mb-1">預估損益</p>
+                          <div className={`text-4xl font-bold tracking-tight flex items-center gap-2 ${result.netProfit > 0 ? 'text-red-600' : result.netProfit < 0 ? 'text-green-600' : 'text-slate-800'}`}>
+                            {result.netProfit > 0 ? '+' : ''}{formatCurrency(result.netProfit)}
+                            {result.netProfit > 0 && <TrendingUp size={32} />}
+                            {result.netProfit < 0 && <TrendingDown size={32} />}
+                          </div>
+                        </div>
+                        <div className={`px-3 py-1 rounded-full text-xs font-bold border ${result.netProfit > 0 ? 'bg-red-50 border-red-100 text-red-600' : result.netProfit < 0 ? 'bg-green-50 border-green-100 text-green-600' : 'bg-slate-100 border-slate-200 text-slate-600'}`}>
+                          {result.roi}%
+                        </div>
+                      </div>
+
+                      <div className="space-y-3 pt-4 border-t border-slate-200 text-sm relative z-10">
+                        <div className="flex justify-between text-slate-500">
+                          <span>原始價差</span>
+                          <span className="text-slate-700 font-mono font-medium">{formatCurrency(result.grossProfit)}</span>
+                        </div>
+                        <div className="flex justify-between text-slate-500">
+                          <div className="flex items-center gap-2">
+                            <span>手續費</span>
+                            <span className="text-[10px] bg-white border border-slate-200 px-1.5 py-0.5 rounded text-slate-400">{result.discountDisplay}</span>
+                          </div>
+                          <span className="text-red-800/70 font-mono">-{formatCurrency(result.fee)}</span>
+                        </div>
+                         <div className="flex justify-between text-slate-500">
+                          <span>交易稅</span>
+                          <span className="text-red-800/70 font-mono">-{formatCurrency(result.tax)}</span>
+                        </div>
+                      </div>
+
+                      {/* 註解區域 */}
+                      <div className="mt-4 pt-4 border-t border-slate-200/50">
+                        <p className="text-[10px] text-slate-400 leading-relaxed text-center">
+                          * 此試算結果僅供參考，實際費用請依各券商系統為準<br/>
+                          * 未包含每筆最低手續費 20 元之規定 (若有)
+                        </p>
+                      </div>
+
+                    </div>
+                  </div>
+                )}
+                
+              </div>
+            </div>
+          </div>
+        );
+      }
+
+      const root = createRoot(document.getElementById('root'));
+      root.render(<App />);
+    </script>
+  </body>
+</html>
