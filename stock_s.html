@@ -39,6 +39,7 @@
       function App() {
         const [mode, setMode] = useState('long'); 
         const [isDayTrade, setIsDayTrade] = useState(false); 
+        const [hasMinFee, setHasMinFee] = useState(true); // 預設開啟最低手續費
         
         const [priceIn, setPriceIn] = useState(''); 
         const [priceOut, setPriceOut] = useState(''); 
@@ -78,9 +79,21 @@
             discountMultiplier = d / 10;
           }
 
-          const fee = Math.floor((sellPriceTotal + buyPriceTotal) * FEE_RATE * discountMultiplier);
+          // 分別計算買賣手續費，以便應用最低 20 元規則
+          let buyFee = Math.floor(buyPriceTotal * FEE_RATE * discountMultiplier);
+          let sellFee = Math.floor(sellPriceTotal * FEE_RATE * discountMultiplier);
+
+          // 修正邏輯：買賣各算一次最低 20 元
+          if (hasMinFee) {
+            if (buyFee < 20) buyFee = 20;
+            if (sellFee < 20) sellFee = 20;
+          }
+
+          const fee = buyFee + sellFee;
+
           const currentTaxRate = isDayTrade ? TAX_DAY : TAX_NORMAL;
           const tax = Math.floor(sellPriceTotal * currentTaxRate);
+          
           const grossProfit = sellPriceTotal - buyPriceTotal; 
           const netProfit = grossProfit - fee - tax;          
 
@@ -112,13 +125,20 @@
             <div className="w-full max-w-md bg-white rounded-[2.5rem] shadow-xl overflow-hidden min-h-[80vh] flex flex-col relative">
               
               {/* Header */}
-              <div className="pt-10 pb-4 px-8 bg-white">
-                <h1 className="text-3xl font-bold text-slate-900 flex items-center gap-2 leading-tight">
-                  證券交易損益試算
-                </h1>
+              <div className="bg-blue-50 pt-10 pb-8 px-6 relative overflow-hidden flex flex-col items-center justify-center text-center">
+                 <div className="absolute top-0 right-0 w-full h-full bg-gradient-to-b from-blue-100/50 to-transparent opacity-50 pointer-events-none" />
+                 
+                 <div className="relative z-10 flex flex-row items-center justify-center gap-2">
+                   <div className="text-blue-600 flex items-center justify-center">
+                     <Calculator size={28} strokeWidth={2.5} />
+                   </div>
+                   <h1 className="text-2xl font-bold text-slate-900 leading-tight">
+                     證券交易損益試算
+                   </h1>
+                 </div>
               </div>
 
-              <div className="flex-1 px-6 pb-10 overflow-y-auto">
+              <div className="flex-1 px-6 pb-10 overflow-y-auto pt-6">
                 
                 {/* Mode Switcher */}
                 <div className="bg-[#f2f2f7] p-1.5 rounded-full flex relative mb-6">
@@ -147,17 +167,34 @@
                 {/* Cards Container */}
                 <div className="space-y-4">
                   
-                  {/* Day Trade Toggle */}
-                  <div 
-                    className="flex items-center justify-between bg-white border border-slate-100 p-4 rounded-3xl shadow-sm cursor-pointer active:scale-[0.98] transition-transform"
-                    onClick={() => setIsDayTrade(!isDayTrade)}
-                  >
-                    <div className="flex flex-col">
-                      <span className="text-lg font-semibold text-slate-800">當沖交易</span>
-                      <span className="text-xs text-slate-500">稅率減半 0.15%</span>
+                  {/* Toggles Row */}
+                  <div className="flex gap-3">
+                    {/* Day Trade Toggle */}
+                    <div 
+                      className="flex-1 flex flex-col justify-between bg-white border border-slate-100 p-4 rounded-3xl shadow-sm cursor-pointer active:scale-[0.98] transition-transform"
+                      onClick={() => setIsDayTrade(!isDayTrade)}
+                    >
+                      <div className="flex justify-between items-start mb-2">
+                        <span className="text-sm font-bold text-slate-700">當沖交易</span>
+                        <div className={`w-10 h-6 rounded-full p-0.5 transition-colors duration-300 ${isDayTrade ? 'bg-blue-500' : 'bg-slate-200'}`}>
+                          <div className={`w-5 h-5 bg-white rounded-full shadow-md transform transition-transform duration-300 ${isDayTrade ? 'translate-x-4' : 'translate-x-0'}`} />
+                        </div>
+                      </div>
+                      <span className="text-[10px] text-slate-400">稅率 0.15%</span>
                     </div>
-                    <div className={`w-14 h-8 rounded-full p-1 transition-colors duration-300 ${isDayTrade ? 'bg-blue-500' : 'bg-slate-200'}`}>
-                      <div className={`w-6 h-6 bg-white rounded-full shadow-md transform transition-transform duration-300 ${isDayTrade ? 'translate-x-6' : 'translate-x-0'}`} />
+
+                    {/* Min Fee Toggle */}
+                    <div 
+                      className="flex-1 flex flex-col justify-between bg-white border border-slate-100 p-4 rounded-3xl shadow-sm cursor-pointer active:scale-[0.98] transition-transform"
+                      onClick={() => setHasMinFee(!hasMinFee)}
+                    >
+                      <div className="flex justify-between items-start mb-2">
+                        <span className="text-sm font-bold text-slate-700">最低手續費</span>
+                        <div className={`w-10 h-6 rounded-full p-0.5 transition-colors duration-300 ${hasMinFee ? 'bg-blue-500' : 'bg-slate-200'}`}>
+                          <div className={`w-5 h-5 bg-white rounded-full shadow-md transform transition-transform duration-300 ${hasMinFee ? 'translate-x-4' : 'translate-x-0'}`} />
+                        </div>
+                      </div>
+                      <span className="text-[10px] text-slate-400">買賣各 20 元</span>
                     </div>
                   </div>
 
@@ -175,6 +212,7 @@
                         />
                         <span className="text-slate-400 font-medium text-sm ml-1 whitespace-nowrap">股</span>
                       </div>
+                      <p className="text-[10px] text-slate-400 mt-1 whitespace-nowrap overflow-hidden text-ellipsis text-right">1張=1000股</p>
                     </div>
 
                     <div className="flex-1 bg-[#f2f2f7] rounded-3xl p-5 transition-all focus-within:ring-2 focus-within:ring-blue-500/20 relative">
@@ -192,7 +230,7 @@
                         />
                         <span className="text-slate-400 font-medium text-sm ml-1 whitespace-nowrap">折</span>
                       </div>
-                      <p className="text-[10px] text-slate-400 mt-1 whitespace-nowrap overflow-hidden text-ellipsis">(請詢問營業員)</p>
+                      <p className="text-[10px] text-slate-400 mt-1 whitespace-nowrap overflow-hidden text-ellipsis text-right">(請詢問營業員)</p>
                     </div>
                   </div>
 
@@ -258,11 +296,11 @@
                   <div className="animate-fade-in-up">
                     <div className="bg-slate-50 border border-slate-200 rounded-[2rem] p-6 text-slate-800 shadow-sm relative overflow-hidden">
                        {/* Decorative background circle */}
-                      <div className={`absolute -right-6 -top-6 w-24 h-24 rounded-full opacity-10 pointer-events-none ${result.netProfit > 0 ? 'bg-red-500' : result.netProfit < 0 ? 'bg-green-500' : 'bg-slate-500'}`} />
+                      <div className={`absolute -right-6 -top-6 w-32 h-32 rounded-full opacity-10 pointer-events-none ${result.netProfit > 0 ? 'bg-red-500' : result.netProfit < 0 ? 'bg-green-500' : 'bg-slate-500'}`} />
 
                       <div className="flex justify-between items-start mb-4 relative z-10">
                         <div>
-                          <p className="text-slate-500 text-sm font-medium mb-1">預估損益</p>
+                          <p className="text-slate-500 text-base font-bold mb-1">預估損益</p>
                           <div className={`text-4xl font-bold tracking-tight flex items-center gap-2 ${result.netProfit > 0 ? 'text-red-600' : result.netProfit < 0 ? 'text-green-600' : 'text-slate-800'}`}>
                             {result.netProfit > 0 ? '+' : ''}{formatCurrency(result.netProfit)}
                             {result.netProfit > 0 && <TrendingUp size={32} />}
@@ -292,15 +330,15 @@
                         </div>
                       </div>
 
-                      {/* 註解區域 */}
-                      <div className="mt-4 pt-4 border-t border-slate-200/50">
-                        <p className="text-[10px] text-slate-400 leading-relaxed text-center">
-                          * 此試算結果僅供參考，實際費用請依各券商系統為準<br/>
-                          * 未包含每筆最低手續費 20 元之規定 (若有)
-                        </p>
-                      </div>
-
                     </div>
+
+                    {/* 註解區域 */}
+                    <div className="mt-4 px-2">
+                      <p className="text-xs text-slate-400 leading-relaxed text-center">
+                        * 此試算結果僅供參考，實際費用請依各券商系統為準
+                      </p>
+                    </div>
+
                   </div>
                 )}
                 
