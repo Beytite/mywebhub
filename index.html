@@ -1,313 +1,340 @@
-import React, { useState } from 'react';
-import { ArrowRightLeft, Calculator, TrendingUp, TrendingDown, RefreshCcw, Percent } from 'lucide-react';
-
-export default function App() {
-  // 狀態管理
-  const [mode, setMode] = useState('long'); // 'long' = 先買後賣, 'short' = 先賣後買
-  const [isDayTrade, setIsDayTrade] = useState(false); // 是否為當沖
-  
-  // 輸入數值
-  const [priceIn, setPriceIn] = useState(''); // 進場價格
-  const [priceOut, setPriceOut] = useState(''); // 出場價格
-  const [volume, setVolume] = useState('1000'); // 股數 (預設一張)
-  const [discount, setDiscount] = useState(''); // 手續費折數
-  
-  // 計算結果狀態
-  const [result, setResult] = useState(null);
-
-  // 常數定義
-  const FEE_RATE = 0.001425; // 手續費率 (0.1425%)
-  const TAX_NORMAL = 0.003;  // 一般證交稅 (0.3%)
-  const TAX_DAY = 0.0015;    // 當沖證交稅 (0.15%)
-
-  // 處理計算邏輯
-  const handleCalculate = () => {
-    const pIn = parseFloat(priceIn);
-    const pOut = parseFloat(priceOut);
-    const vol = parseInt(volume);
-
-    if (isNaN(pIn) || isNaN(pOut) || isNaN(vol)) {
-      alert("請輸入正確的數字");
-      return;
+<!DOCTYPE html>
+<html>
+  <head>
+    <base target="_top">
+    
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>台股證券損益試算</title>
+    
+    <!-- 2. 載入 Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- 3. 設定 Import Map (讓瀏覽器看懂 import ... from ... 語法) -->
+    <script type="importmap">
+    {
+      "imports": {
+        "react": "https://esm.sh/react@18.2.0",
+        "react-dom/client": "https://esm.sh/react-dom@18.2.0/client",
+        "lucide-react": "https://esm.sh/lucide-react@0.292.0"
+      }
     }
+    </script>
+    
+    <!-- 4. Babel (雖然使用 ESM，但為了 JSX 語法支援，我們仍需 Babel 進行即時編譯，
+           注意：在正式高流量專案建議先編譯，但個人小工具此法最快) -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  </head>
+  <body>
+    <div id="root"></div>
 
-    // 1. 定義買入總額與賣出總額
-    let buyPriceTotal = 0;
-    let sellPriceTotal = 0;
+    <!-- 5. 您的 React 程式碼 -->
+    <script type="text/babel" data-type="module">
+      import React, { useState } from 'react';
+      import { createRoot } from 'react-dom/client';
+      import { ArrowRightLeft, Calculator, TrendingUp, TrendingDown, RefreshCcw, Percent } from 'lucide-react';
 
-    if (mode === 'long') {
-      // 先買後賣：進場=買，出場=賣
-      buyPriceTotal = pIn * vol;
-      sellPriceTotal = pOut * vol;
-    } else {
-      // 先賣後買：進場=賣，出場=買
-      sellPriceTotal = pIn * vol;
-      buyPriceTotal = pOut * vol;
-    }
-
-    // 2. 處理手續費折數
-    // 輸入 2.8 代表 2.8折 (0.28)
-    let discountMultiplier = 1;
-    const d = parseFloat(discount);
-    if (!isNaN(d) && d > 0) {
-      discountMultiplier = d / 10;
-    }
-
-    // 3. 計算手續費 (依照指定公式)
-    // 公式: ((賣+買) * 手續費%數 * 手續費折數)
-    // 通常證券商系統會無條件捨去或四捨五入至整數，此處使用 Math.floor 下取整
-    const fee = Math.floor((sellPriceTotal + buyPriceTotal) * FEE_RATE * discountMultiplier);
-
-    // 4. 計算證交稅
-    // 公式: (賣 * 交易稅)
-    const currentTaxRate = isDayTrade ? TAX_DAY : TAX_NORMAL;
-    const tax = Math.floor(sellPriceTotal * currentTaxRate);
-
-    // 5. 計算損益
-    // 公式: (賣-買) - 手續費 - 交易稅
-    const grossProfit = sellPriceTotal - buyPriceTotal; // (賣-買) 價差
-    const netProfit = grossProfit - fee - tax;          // 淨利
-
-    // 報酬率 (淨利 / 成本)
-    // 做多成本 = 買進總額 + 手續費(買)
-    // 這裡簡化以「本金」即「買進總額」或「賣出總額(做空保證金)」當分母
-    const costBase = mode === 'long' ? buyPriceTotal : sellPriceTotal; 
-    const roi = (netProfit / costBase) * 100;
-
-    setResult({
-      grossProfit,
-      fee,
-      tax,
-      netProfit,
-      roi: roi.toFixed(2),
-      discountDisplay: discountMultiplier < 1 ? `${d}折` : '無折扣'
-    });
-  };
-
-  // 重置表單
-  const handleReset = () => {
-    setPriceIn('');
-    setPriceOut('');
-    setResult(null);
-  };
-
-  // 格式化金錢顯示
-  const formatCurrency = (val) => {
-    return new Intl.NumberFormat('zh-TW').format(val);
-  };
-
-  return (
-    <div className="min-h-screen bg-slate-100 py-8 px-4 font-sans text-slate-800">
-      <div className="max-w-md mx-auto bg-white rounded-2xl shadow-xl overflow-hidden border border-slate-200">
+      function App() {
+        // --- 這裡貼上原本 StockCalculator.jsx 內的代碼 (不含 export default) ---
         
-        {/* Header */}
-        <div className="bg-blue-600 p-6 text-white text-center relative overflow-hidden">
-          <div className="absolute top-0 left-0 w-full h-full opacity-10 pointer-events-none">
-             <TrendingUp size={120} className="absolute -right-4 -bottom-4" />
-          </div>
-          <h1 className="text-2xl font-bold flex items-center justify-center gap-2 relative z-10">
-            <Calculator size={24} />
-            台股證券損益試算
-          </h1>
-          <p className="text-blue-100 text-sm mt-2 relative z-10">快速計算買賣獲利與成本</p>
-        </div>
+        // 狀態管理
+        const [mode, setMode] = useState('long'); // 'long' = 先買後賣, 'short' = 先賣後買
+        const [isDayTrade, setIsDayTrade] = useState(false); // 是否為當沖
+        
+        // 輸入數值
+        const [priceIn, setPriceIn] = useState(''); // 進場價格
+        const [priceOut, setPriceOut] = useState(''); // 出場價格
+        const [volume, setVolume] = useState('1000'); // 股數 (預設一張)
+        const [discount, setDiscount] = useState(''); // 手續費折數
+        
+        // 計算結果狀態
+        const [result, setResult] = useState(null);
 
-        <div className="p-6 space-y-6">
-          
-          {/* 1. 選項設定區域 */}
-          <div className="grid grid-cols-2 gap-3 p-1 bg-slate-100 rounded-lg">
-            <button
-              onClick={() => { setMode('long'); setResult(null); }}
-              className={`py-2 px-4 rounded-md text-sm font-medium transition-all duration-200 ${
-                mode === 'long' 
-                  ? 'bg-white text-blue-600 shadow-sm' 
-                  : 'text-slate-500 hover:text-slate-700'
-              }`}
-            >
-              先買後賣 (做多)
-            </button>
-            <button
-              onClick={() => { setMode('short'); setResult(null); }}
-              className={`py-2 px-4 rounded-md text-sm font-medium transition-all duration-200 ${
-                mode === 'short' 
-                  ? 'bg-white text-green-600 shadow-sm' 
-                  : 'text-slate-500 hover:text-slate-700'
-              }`}
-            >
-              先賣後買 (做空)
-            </button>
-          </div>
+        // 常數定義
+        const FEE_RATE = 0.001425; // 手續費率
+        const TAX_NORMAL = 0.003;  // 一般證交稅
+        const TAX_DAY = 0.0015;    // 當沖證交稅
 
-          {/* 當沖開關 */}
-          <div className="flex items-center justify-between bg-slate-50 p-3 rounded-lg border border-slate-200">
-            <div className="flex flex-col">
-              <span className="font-medium text-slate-700">當沖交易</span>
-              <span className="text-xs text-slate-500">證交稅減半 (0.15%)</span>
-            </div>
-            <label className="relative inline-flex items-center cursor-pointer">
-              <input 
-                type="checkbox" 
-                className="sr-only peer" 
-                checked={isDayTrade}
-                onChange={(e) => setIsDayTrade(e.target.checked)}
-              />
-              <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
-            </label>
-          </div>
+        // 處理計算邏輯
+        const handleCalculate = () => {
+          const pIn = parseFloat(priceIn);
+          const pOut = parseFloat(priceOut);
+          const vol = parseInt(volume);
 
-          {/* 2. 輸入區域 */}
-          <div className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
-              {/* 股數 */}
-              <div>
-                <label className="block text-sm font-medium text-slate-600 mb-1">交易股數</label>
-                <input
-                  type="number"
-                  value={volume}
-                  onChange={(e) => setVolume(e.target.value)}
-                  className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-colors placeholder:text-slate-300"
-                  placeholder="例如: 1000"
-                />
-              </div>
+          if (isNaN(pIn) || isNaN(pOut) || isNaN(vol)) {
+            alert("請輸入正確的數字");
+            return;
+          }
+
+          // 定義買入價與賣出價
+          let buyPriceTotal = 0;
+          let sellPriceTotal = 0;
+
+          if (mode === 'long') {
+            buyPriceTotal = pIn * vol;
+            sellPriceTotal = pOut * vol;
+          } else {
+            sellPriceTotal = pIn * vol;
+            buyPriceTotal = pOut * vol;
+          }
+
+          // 計算手續費折扣
+          let discountMultiplier = 1;
+          const d = parseFloat(discount);
+          if (!isNaN(d) && d > 0) {
+            discountMultiplier = d / 10;
+          }
+
+          // 依照您的公式更新：((賣+買) * 手續費%數 * 手續費折數)
+          const fee = Math.floor((sellPriceTotal + buyPriceTotal) * FEE_RATE * discountMultiplier);
+
+          // 依照您的公式更新：(賣 * 交易稅)
+          const currentTaxRate = isDayTrade ? TAX_DAY : TAX_NORMAL;
+          const tax = Math.floor(sellPriceTotal * currentTaxRate);
+
+          // 依照您的公式更新：(賣-買) - 手續費 - 交易稅
+          const grossProfit = sellPriceTotal - buyPriceTotal; 
+          const netProfit = grossProfit - fee - tax;          
+
+          const costBase = mode === 'long' ? buyPriceTotal : sellPriceTotal;
+          const roi = (netProfit / costBase) * 100;
+
+          setResult({
+            grossProfit,
+            fee,
+            tax,
+            netProfit,
+            roi: roi.toFixed(2),
+            discountDisplay: discountMultiplier < 1 ? `${d}折` : '無折扣'
+          });
+        };
+
+        const handleReset = () => {
+          setPriceIn('');
+          setPriceOut('');
+          setResult(null);
+        };
+
+        const formatCurrency = (val) => {
+          return new Intl.NumberFormat('zh-TW').format(val);
+        };
+
+        return (
+          <div className="min-h-screen bg-slate-100 py-8 px-4 font-sans text-slate-800">
+            <div className="max-w-md mx-auto bg-white rounded-2xl shadow-xl overflow-hidden border border-slate-200">
               
-              {/* 手續費折數 */}
-              <div>
-                <label className="block text-sm font-medium text-slate-600 mb-1 flex items-center gap-1">
-                  手續費折數
-                  <Percent size={14} className="text-slate-400" />
-                </label>
-                <div className="relative">
-                  <input
-                    type="number"
-                    value={discount}
-                    onChange={(e) => setDiscount(e.target.value)}
-                    step="0.1"
-                    className="w-full pl-3 pr-8 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-colors placeholder:text-slate-300"
-                    placeholder="如: 2.8"
-                  />
-                  <span className="absolute right-3 top-2 text-slate-400 text-sm">折</span>
+              {/* Header */}
+              <div className="bg-blue-600 p-6 text-white text-center relative overflow-hidden">
+                <div className="absolute top-0 left-0 w-full h-full opacity-10 pointer-events-none">
+                   <TrendingUp size={120} className="absolute -right-4 -bottom-4" />
                 </div>
-                <p className="text-[10px] text-slate-400 mt-1 text-right">(請詢問營業員)</p>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-2 gap-4 relative">
-              {/* 中間的箭頭 */}
-              <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-white p-1 rounded-full shadow-sm border border-slate-200 z-10 text-slate-400">
-                <ArrowRightLeft size={16} />
+                <h1 className="text-2xl font-bold flex items-center justify-center gap-2 relative z-10">
+                  <Calculator size={24} />
+                  台股證券損益試算
+                </h1>
+                <p className="text-blue-100 text-sm mt-2 relative z-10">快速計算買賣獲利與成本</p>
               </div>
 
-              {/* 左側欄位：根據模式改變 */}
-              <div>
-                <label className={`block text-sm font-medium mb-1 ${mode === 'long' ? 'text-red-600' : 'text-green-600'}`}>
-                  {mode === 'long' ? '買進價格' : '賣出價格'}
-                </label>
-                <div className="relative">
-                  <span className="absolute left-3 top-2 text-slate-400">$</span>
-                  <input
-                    type="number"
-                    value={priceIn}
-                    onChange={(e) => setPriceIn(e.target.value)}
-                    step="0.1"
-                    className={`w-full pl-7 pr-10 py-2 border rounded-lg focus:ring-2 outline-none transition-colors placeholder:text-slate-300 ${
-                       mode === 'long' ? 'focus:ring-red-200 border-red-200' : 'focus:ring-green-200 border-green-200'
-                    }`}
-                    placeholder={mode === 'long' ? '買入價' : '放空價'}
-                  />
-                  <span className="absolute right-3 top-2 text-slate-400 text-sm">/股</span>
-                </div>
-              </div>
-
-              {/* 右側欄位：根據模式改變 */}
-              <div>
-                <label className={`block text-sm font-medium mb-1 ${mode === 'long' ? 'text-green-600' : 'text-red-600'}`}>
-                  {mode === 'long' ? '賣出價格' : '買回價格'}
-                </label>
-                <div className="relative">
-                  <span className="absolute left-3 top-2 text-slate-400">$</span>
-                  <input
-                    type="number"
-                    value={priceOut}
-                    onChange={(e) => setPriceOut(e.target.value)}
-                    step="0.1"
-                    className={`w-full pl-7 pr-10 py-2 border rounded-lg focus:ring-2 outline-none transition-colors placeholder:text-slate-300 ${
-                       mode === 'long' ? 'focus:ring-green-200 border-green-200' : 'focus:ring-red-200 border-red-200'
-                    }`}
-                    placeholder={mode === 'long' ? '賣出價' : '回補價'}
-                  />
-                  <span className="absolute right-3 top-2 text-slate-400 text-sm">/股</span>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* 3. 按鈕區域 */}
-          <div className="flex gap-3 pt-2">
-            <button
-              onClick={handleReset}
-              className="px-4 py-3 rounded-lg border border-slate-300 text-slate-600 hover:bg-slate-50 transition-colors flex items-center justify-center"
-              title="清除重置"
-            >
-              <RefreshCcw size={20} />
-            </button>
-            <button
-              onClick={handleCalculate}
-              className="flex-1 bg-slate-800 hover:bg-slate-900 text-white font-bold py-3 px-4 rounded-lg shadow-md hover:shadow-lg transition-all transform active:scale-[0.98] flex items-center justify-center gap-2"
-            >
-              開始試算
-            </button>
-          </div>
-
-          {/* 4. 結果顯示區域 */}
-          {result && (
-            <div className="mt-6 border-t border-slate-200 pt-6 animate-fade-in-up">
-              <div className="text-center mb-6">
-                <p className="text-slate-500 text-sm mb-1">預估損益金額</p>
-                <div className={`text-4xl font-bold flex items-center justify-center gap-2 ${result.netProfit > 0 ? 'text-red-600' : result.netProfit < 0 ? 'text-green-600' : 'text-slate-800'}`}>
-                  {result.netProfit > 0 ? '+' : ''}{formatCurrency(result.netProfit)}
-                  {result.netProfit > 0 && <TrendingUp size={32} />}
-                  {result.netProfit < 0 && <TrendingDown size={32} />}
-                </div>
-                <div className={`text-sm font-medium mt-1 ${result.netProfit > 0 ? 'text-red-500' : result.netProfit < 0 ? 'text-green-500' : 'text-slate-400'}`}>
-                  報酬率: {result.roi}%
-                </div>
-              </div>
-
-              <div className="bg-slate-50 rounded-xl p-4 space-y-3 text-sm">
-                <div className="flex justify-between items-center pb-2 border-b border-slate-200 border-dashed">
-                  <span className="text-slate-600">原始價差損益</span>
-                  <span className="font-medium font-mono">{formatCurrency(result.grossProfit)}</span>
-                </div>
-                <div className="flex justify-between items-center text-slate-500">
-                  <div className="flex flex-col">
-                    <span>手續費 (買+賣)</span>
-                    <span className="text-xs text-slate-400 scale-90 origin-left">費率 0.1425% ({result.discountDisplay})</span>
-                  </div>
-                  <span className="font-mono text-red-800">-{formatCurrency(result.fee)}</span>
-                </div>
-                <div className="flex justify-between items-center text-slate-500">
-                  <div className="flex flex-col">
-                    <span>證券交易稅 (賣出)</span>
-                    <span className="text-xs text-slate-400 scale-90 origin-left">費率 {isDayTrade ? '0.15%' : '0.3%'}</span>
-                  </div>
-                  <span className="font-mono text-red-800">-{formatCurrency(result.tax)}</span>
-                </div>
+              <div className="p-6 space-y-6">
                 
-                <div className="pt-2 mt-2 border-t border-slate-200 flex justify-between items-center">
-                  <span className="font-bold text-slate-700">淨損益</span>
-                  <span className={`font-bold font-mono text-lg ${result.netProfit > 0 ? 'text-red-600' : result.netProfit < 0 ? 'text-green-600' : 'text-slate-800'}`}>
-                    {formatCurrency(result.netProfit)}
-                  </span>
+                {/* 1. 選項設定區域 */}
+                <div className="grid grid-cols-2 gap-3 p-1 bg-slate-100 rounded-lg">
+                  <button
+                    onClick={() => { setMode('long'); setResult(null); }}
+                    className={`py-2 px-4 rounded-md text-sm font-medium transition-all duration-200 ${
+                      mode === 'long' 
+                        ? 'bg-white text-blue-600 shadow-sm' 
+                        : 'text-slate-500 hover:text-slate-700'
+                    }`}
+                  >
+                    先買後賣 (做多)
+                  </button>
+                  <button
+                    onClick={() => { setMode('short'); setResult(null); }}
+                    className={`py-2 px-4 rounded-md text-sm font-medium transition-all duration-200 ${
+                      mode === 'short' 
+                        ? 'bg-white text-green-600 shadow-sm' 
+                        : 'text-slate-500 hover:text-slate-700'
+                    }`}
+                  >
+                    先賣後買 (做空)
+                  </button>
                 </div>
+
+                {/* 當沖開關 */}
+                <div className="flex items-center justify-between bg-slate-50 p-3 rounded-lg border border-slate-200">
+                  <div className="flex flex-col">
+                    <span className="font-medium text-slate-700">當沖交易</span>
+                    <span className="text-xs text-slate-500">證交稅減半 (0.15%)</span>
+                  </div>
+                  <label className="relative inline-flex items-center cursor-pointer">
+                    <input 
+                      type="checkbox" 
+                      className="sr-only peer" 
+                      checked={isDayTrade}
+                      onChange={(e) => setIsDayTrade(e.target.checked)}
+                    />
+                    <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                  </label>
+                </div>
+
+                {/* 2. 輸入區域 */}
+                <div className="space-y-4">
+                  <div className="grid grid-cols-2 gap-4">
+                    {/* 股數 */}
+                    <div>
+                      <label className="block text-sm font-medium text-slate-600 mb-1">交易股數</label>
+                      <input
+                        type="number"
+                        value={volume}
+                        onChange={(e) => setVolume(e.target.value)}
+                        className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-colors placeholder:text-slate-300"
+                        placeholder="例如: 1000"
+                      />
+                    </div>
+                    
+                    {/* 手續費折數 */}
+                    <div>
+                      <label className="block text-sm font-medium text-slate-600 mb-1 flex items-center gap-1">
+                        手續費折數
+                        <Percent size={14} className="text-slate-400" />
+                      </label>
+                      <div className="relative">
+                        <input
+                          type="number"
+                          value={discount}
+                          onChange={(e) => setDiscount(e.target.value)}
+                          step="0.1"
+                          className="w-full pl-3 pr-8 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-colors placeholder:text-slate-300"
+                          placeholder="如: 2.8"
+                        />
+                        <span className="absolute right-3 top-2 text-slate-400 text-sm">折</span>
+                      </div>
+                      <p className="text-[10px] text-slate-400 mt-1 text-right">(請詢問營業員)</p>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4 relative">
+                    <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-white p-1 rounded-full shadow-sm border border-slate-200 z-10 text-slate-400">
+                      <ArrowRightLeft size={16} />
+                    </div>
+
+                    <div>
+                      <label className={`block text-sm font-medium mb-1 ${mode === 'long' ? 'text-red-600' : 'text-green-600'}`}>
+                        {mode === 'long' ? '買進價格' : '賣出價格'}
+                      </label>
+                      <div className="relative">
+                        <span className="absolute left-3 top-2 text-slate-400">$</span>
+                        <input
+                          type="number"
+                          value={priceIn}
+                          onChange={(e) => setPriceIn(e.target.value)}
+                          step="0.1"
+                          className={`w-full pl-7 pr-10 py-2 border rounded-lg focus:ring-2 outline-none transition-colors placeholder:text-slate-300 ${
+                             mode === 'long' ? 'focus:ring-red-200 border-red-200' : 'focus:ring-green-200 border-green-200'
+                          }`}
+                          placeholder={mode === 'long' ? '買入價' : '放空價'}
+                        />
+                        <span className="absolute right-3 top-2 text-slate-400 text-sm">/股</span>
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className={`block text-sm font-medium mb-1 ${mode === 'long' ? 'text-green-600' : 'text-red-600'}`}>
+                        {mode === 'long' ? '賣出價格' : '買回價格'}
+                      </label>
+                      <div className="relative">
+                        <span className="absolute left-3 top-2 text-slate-400">$</span>
+                        <input
+                          type="number"
+                          value={priceOut}
+                          onChange={(e) => setPriceOut(e.target.value)}
+                          step="0.1"
+                          className={`w-full pl-7 pr-10 py-2 border rounded-lg focus:ring-2 outline-none transition-colors placeholder:text-slate-300 ${
+                             mode === 'long' ? 'focus:ring-green-200 border-green-200' : 'focus:ring-red-200 border-red-200'
+                          }`}
+                          placeholder={mode === 'long' ? '賣出價' : '回補價'}
+                        />
+                        <span className="absolute right-3 top-2 text-slate-400 text-sm">/股</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* 3. 按鈕區域 */}
+                <div className="flex gap-3 pt-2">
+                  <button
+                    onClick={handleReset}
+                    className="px-4 py-3 rounded-lg border border-slate-300 text-slate-600 hover:bg-slate-50 transition-colors flex items-center justify-center"
+                    title="清除重置"
+                  >
+                    <RefreshCcw size={20} />
+                  </button>
+                  <button
+                    onClick={handleCalculate}
+                    className="flex-1 bg-slate-800 hover:bg-slate-900 text-white font-bold py-3 px-4 rounded-lg shadow-md hover:shadow-lg transition-all transform active:scale-[0.98] flex items-center justify-center gap-2"
+                  >
+                    開始試算
+                  </button>
+                </div>
+
+                {/* 4. 結果顯示區域 */}
+                {result && (
+                  <div className="mt-6 border-t border-slate-200 pt-6 animate-fade-in-up">
+                    <div className="text-center mb-6">
+                      <p className="text-slate-500 text-sm mb-1">預估損益金額</p>
+                      <div className={`text-4xl font-bold flex items-center justify-center gap-2 ${result.netProfit > 0 ? 'text-red-600' : result.netProfit < 0 ? 'text-green-600' : 'text-slate-800'}`}>
+                        {result.netProfit > 0 ? '+' : ''}{formatCurrency(result.netProfit)}
+                        {result.netProfit > 0 && <TrendingUp size={32} />}
+                        {result.netProfit < 0 && <TrendingDown size={32} />}
+                      </div>
+                      <div className={`text-sm font-medium mt-1 ${result.netProfit > 0 ? 'text-red-500' : result.netProfit < 0 ? 'text-green-500' : 'text-slate-400'}`}>
+                        報酬率: {result.roi}%
+                      </div>
+                    </div>
+
+                    <div className="bg-slate-50 rounded-xl p-4 space-y-3 text-sm">
+                      <div className="flex justify-between items-center pb-2 border-b border-slate-200 border-dashed">
+                        <span className="text-slate-600">原始價差損益</span>
+                        <span className="font-medium font-mono">{formatCurrency(result.grossProfit)}</span>
+                      </div>
+                      <div className="flex justify-between items-center text-slate-500">
+                        <div className="flex flex-col">
+                          <span>手續費 (買+賣)</span>
+                          <span className="text-xs text-slate-400 scale-90 origin-left">費率 0.1425% ({result.discountDisplay})</span>
+                        </div>
+                        <span className="font-mono text-red-800">-{formatCurrency(result.fee)}</span>
+                      </div>
+                      <div className="flex justify-between items-center text-slate-500">
+                        <div className="flex flex-col">
+                          <span>證券交易稅 (賣出)</span>
+                          <span className="text-xs text-slate-400 scale-90 origin-left">費率 {isDayTrade ? '0.15%' : '0.3%'}</span>
+                        </div>
+                        <span className="font-mono text-red-800">-{formatCurrency(result.tax)}</span>
+                      </div>
+                      
+                      <div className="pt-2 mt-2 border-t border-slate-200 flex justify-between items-center">
+                        <span className="font-bold text-slate-700">淨損益</span>
+                        <span className={`font-bold font-mono text-lg ${result.netProfit > 0 ? 'text-red-600' : result.netProfit < 0 ? 'text-green-600' : 'text-slate-800'}`}>
+                          {formatCurrency(result.netProfit)}
+                        </span>
+                      </div>
+                    </div>
+                    <p className="text-xs text-center text-slate-400 mt-4">
+                      * 此試算結果僅供參考，實際費用請依各券商系統為準
+                      <br />* 未包含每筆最低手續費 20 元之規定 (若有)
+                    </p>
+                  </div>
+                )}
               </div>
-              <p className="text-xs text-center text-slate-400 mt-4">
-                * 此試算結果僅供參考，實際費用請依各券商系統為準
-                <br />* 未包含每筆最低手續費 20 元之規定 (若有)
-              </p>
             </div>
-          )}
-        </div>
-      </div>
-    </div>
-  );
-}
+          </div>
+        );
+      }
+
+      // 6. 啟動 React (Mounting)
+      const root = createRoot(document.getElementById('root'));
+      root.render(<App />);
+    </script>
+  </body>
+</html>
