@@ -145,8 +145,8 @@
                 
                 const maxAllowedWidth = gapEndX - gapStartX; // 允許的最大文字寬度
 
-                // 設定姓名「固定 50pt」大小
-                const nameFontString = 'bold 50pt "Noto Sans TC", "Microsoft JhengHei", sans-serif';
+                // 設定姓名「固定 60pt」大小
+                const nameFontString = 'bold 60pt "Noto Sans TC", "Microsoft JhengHei", sans-serif';
                 // 設定職稱的基礎字體大小 (相對圖片高度)
                 const baseTitleFontSize = canvas.height * 0.035; 
 
@@ -160,7 +160,7 @@
                 let titleScale = 1.0;
                 const minScale = 0.3; // 最小縮放限制
 
-                // 先計算姓名固定大小 (50pt) 時佔用的寬度
+                // 先計算姓名固定大小 (60pt) 時佔用的寬度
                 ctx.font = nameFontString;
                 const finalNameWidth = nameText ? ctx.measureText(nameText).width : 0;
                 
@@ -193,7 +193,7 @@
                 // 計算起始 X 座標 (將整體文字區塊在可用空間內「置中對齊」)
                 let startX = gapStartX + (maxAllowedWidth - totalRenderWidth) / 2;
 
-                // 畫姓名 (固定75pt、不縮放)
+                // 畫姓名 (固定60pt、不縮放)
                 if (nameText) {
                     ctx.font = nameFontString;
                     ctx.fillStyle = '#EBCD85'; // 指定顏色
