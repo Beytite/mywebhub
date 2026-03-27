@@ -76,8 +76,8 @@
                     <span class="text-gray-500 font-medium animate-pulse">載入card中...</span>
                 </div>
                 
-                <!-- 圖片原始檔 (隱藏) -->
-                <img id="sourceImage" src="card.png" alt="card" crossorigin="anonymous">
+                <!-- 圖片原始檔 (隱藏) - 加上明確的相對路徑 ./ -->
+                <img id="sourceImage" src="./image/card.png" alt="card" crossorigin="anonymous">
                 
                 <!-- 繪製用的 Canvas -->
                 <canvas id="previewCanvas" class="max-w-full h-auto shadow-md"></canvas>
@@ -114,9 +114,9 @@
                 sourceImage.onload();
             }
 
-            // 圖片載入失敗處理
+            // 圖片載入失敗處理 (加入詳細提示)
             sourceImage.onerror = () => {
-                loadingMsg.innerHTML = '<span class="text-red-500">找不到card。</span>';
+                loadingMsg.innerHTML = '<div class="text-red-500 text-center px-4">找不到圖片檔案。<br><span class="text-sm text-gray-600">請確認 GitHub 上有 <b>image/card.png</b> 且<b>大小寫完全一致</b>。</span></div>';
             };
 
             // 繪製合成圖片的核心函數
@@ -133,10 +133,6 @@
                 if (!nameText && !titleText) return;
 
                 // --- 2. 設定繪製座標參數 (使用相對比例以適應不同解析度) ---
-                // 根據提供的範例圖，大約的相對位置：
-                // "誠摯邀請" 結束大約在寬度的 68.5%
-                // "蒞臨" 開始大約在寬度的 86%
-                // Y軸基準線大約在高度的 26.8%
                 const gapStartX = canvas.width * 0.685; 
                 const gapEndX = canvas.width * 0.855;   
                 const textY = canvas.height * 0.268;    
@@ -153,7 +149,6 @@
                 const getFontString = (size, scale) => `bold ${size * scale}px "Noto Sans TC", "Microsoft JhengHei", sans-serif`;
 
                 // --- 3. 動態計算縮放比例 (確保文字不會超出範圍並等比例縮小) ---
-                // 為了避免蓋到旁邊的字，保留一點安全邊距 (可用寬度的 95%)
                 const safeMaxWidth = maxAllowedWidth * 0.95;
                 let currentScale = 1.0;
                 const minScale = 0.3; // 最小縮放限制
@@ -193,12 +188,6 @@
                 if (nameText) {
                     ctx.font = getFontString(baseNameFontSize, currentScale);
                     ctx.fillStyle = '#EBCD85'; // 變更為指定的顏色
-                    // 加入輕微陰影讓文字在背景上更立體 (可選)
-                    ctx.shadowColor = 'rgba(0,0,0,0.3)';
-                    ctx.shadowBlur = 4;
-                    ctx.shadowOffsetX = 1;
-                    ctx.shadowOffsetY = 1;
-                    
                     ctx.fillText(nameText, startX, textY);
                     startX += finalNameWidth + gapWidth;
                 }
@@ -209,12 +198,6 @@
                     ctx.fillStyle = '#EBCD85'; // 變更為指定的顏色
                     ctx.fillText(titleText, startX, textY);
                 }
-                
-                // 重置陰影以免影響後續可能的繪製
-                ctx.shadowColor = 'transparent';
-                ctx.shadowBlur = 0;
-                ctx.shadowOffsetX = 0;
-                ctx.shadowOffsetY = 0;
             }
 
             // 綁定事件 - 僅保留點擊預覽按鈕時觸發
