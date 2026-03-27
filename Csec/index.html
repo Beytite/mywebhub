@@ -116,7 +116,7 @@
 
             // 圖片載入失敗處理
             sourceImage.onerror = () => {
-                loadingMsg.innerHTML = '<span class="text-red-500">找不到card</span>';
+                loadingMsg.innerHTML = '<span class="text-red-500">找不到card，請確認圖片檔案與網頁在同一資料夾。</span>';
             };
 
             // 繪製合成圖片的核心函數
@@ -220,13 +220,9 @@
                 ctx.shadowOffsetY = 0;
             }
 
-            // 綁定事件
+            // 綁定事件 - 僅保留點擊預覽按鈕時觸發
             previewBtn.addEventListener('click', drawCanvas);
             
-            // 使用者體驗優化：輸入時即時預覽
-            nameInput.addEventListener('input', drawCanvas);
-            titleInput.addEventListener('input', drawCanvas);
-
             // 下載功能
             downloadBtn.addEventListener('click', () => {
                 if (!isImageLoaded) {
