@@ -76,7 +76,7 @@
                 
                 <div class="relative w-full flex justify-center bg-gray-50 rounded-lg p-2 border border-dashed border-gray-300">
                     <!-- 隱藏的原始圖片載入 -->
-                    <img id="sourceImage" src="card.jpg" alt="Source" style="display: none;" crossorigin="anonymous">
+                    <img id="sourceImage" src="card.png" alt="Source" style="display: none;" crossorigin="anonymous">
                     <!-- Canvas 用於繪製與輸出 -->
                     <canvas id="previewCanvas"></canvas>
                     
@@ -115,7 +115,7 @@
 
         // 如果圖片載入失敗的防呆機制
         sourceImage.onerror = function() {
-            loadingMsg.innerHTML = '<span class="text-red-500">無法載入底圖，請確認 card.jpg 是否存在。</span>';
+            loadingMsg.innerHTML = '<span class="text-red-500">無法載入底圖。</span>';
         };
 
         function checkReady() {
