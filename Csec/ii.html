@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>國泰證券 - 邀請卡客製化</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Noto Sans TC', sans-serif;
+            background-color: #f0f4f8;
+        }
+        /* 確保 Canvas 響應式縮放，但不失真 */
+        #previewCanvas {
+            max-width: 100%;
+            height: auto;
+            border-radius: 0.5rem;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        }
+    </style>
+</head>
+<body class="min-h-screen p-4 md:p-8 text-gray-800">
+
+    <div class="max-w-6xl mx-auto">
+        <!-- 標題 -->
+        <header class="text-center mb-8">
+            <h1 class="text-3xl md:text-4xl font-bold text-[#00a85a] mb-2">邀請卡貴賓填寫系統</h1>
+            <p class="text-gray-600">國泰證券 左營簡易分公司 璀璨開幕</p>
+        </header>
+
+        <div class="flex flex-col lg:flex-row gap-8 items-start">
+            
+            <!-- 左側/上方：控制面板 -->
+            <div class="w-full lg:w-1/3 bg-white p-6 rounded-2xl shadow-lg border border-gray-100">
+                <h2 class="text-xl font-bold mb-6 border-b pb-2 text-gray-700">自訂貴賓資訊</h2>
+                
+                <div class="space-y-5">
+                    <!-- 姓名輸入 -->
+                    <div>
+                        <label for="nameInput" class="block text-sm font-semibold text-gray-700 mb-1">貴賓姓名 (最多四字)</label>
+                        <input type="text" id="nameInput" maxlength="4" placeholder="例如：王曉明" 
+                            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#00a85a] focus:border-[#00a85a] outline-none transition-all">
+                        <p class="text-xs text-gray-500 mt-1">字數限制：最大4個中文字</p>
+                    </div>
+
+                    <!-- 稱謂輸入 -->
+                    <div>
+                        <label for="titleInput" class="block text-sm font-semibold text-gray-700 mb-1">貴賓稱謂 (最多三字)</label>
+                        <input type="text" id="titleInput" maxlength="3" placeholder="例如：董事長" 
+                            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#00a85a] focus:border-[#00a85a] outline-none transition-all">
+                        <p class="text-xs text-gray-500 mt-1">字數限制：最大3個中文字</p>
+                    </div>
+
+                    <!-- 按鈕區 -->
+                    <div class="pt-4 flex gap-3">
+                        <button onclick="updatePreview()" 
+                            class="flex-1 bg-[#00a85a] hover:bg-[#008c4b] text-white font-bold py-3 px-4 rounded-lg transition-colors flex justify-center items-center shadow-md">
+                            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path></svg>
+                            預覽效果
+                        </button>
+                        <button onclick="downloadImage()" 
+                            class="flex-1 bg-yellow-500 hover:bg-yellow-600 text-white font-bold py-3 px-4 rounded-lg transition-colors flex justify-center items-center shadow-md">
+                            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
+                            下載圖檔
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 右側/下方：預覽圖區 -->
+            <div class="w-full lg:w-2/3 bg-white p-6 rounded-2xl shadow-lg border border-gray-100 flex flex-col items-center justify-center min-h-[400px]">
+                <h2 class="text-xl font-bold mb-4 text-gray-700 w-full text-left">邀請卡預覽</h2>
+                
+                <div class="relative w-full flex justify-center bg-gray-50 rounded-lg p-2 border border-dashed border-gray-300">
+                    <!-- 隱藏的原始圖片載入 -->
+                    <img id="sourceImage" src="card.jpg" alt="Source" style="display: none;" crossorigin="anonymous">
+                    <!-- Canvas 用於繪製與輸出 -->
+                    <canvas id="previewCanvas"></canvas>
+                    
+                    <!-- 載入中提示 -->
+                    <div id="loadingMsg" class="absolute inset-0 flex items-center justify-center text-gray-500 bg-gray-50/80 z-10">
+                        圖片載入中...
+                    </div>
+                </div>
+                <p class="text-sm text-gray-500 mt-4 text-center">請點擊左側「預覽效果」更新文字，確認無誤後點擊「下載圖檔」。</p>
+            </div>
+
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('previewCanvas');
+        const ctx = canvas.getContext('2d');
+        const sourceImage = document.getElementById('sourceImage');
+        const loadingMsg = document.getElementById('loadingMsg');
+        
+        let imageLoaded = false;
+        let fontsLoaded = false;
+
+        // 等待字體載入，避免第一次繪製時字體未生效
+        document.fonts.ready.then(function() {
+            fontsLoaded = true;
+            checkReady();
+        });
+
+        // 圖片載入完成處理
+        sourceImage.onload = function() {
+            imageLoaded = true;
+            loadingMsg.style.display = 'none';
+            checkReady();
+        };
+
+        // 如果圖片載入失敗的防呆機制
+        sourceImage.onerror = function() {
+            loadingMsg.innerHTML = '<span class="text-red-500">無法載入底圖，請確認 card.jpg 是否存在。</span>';
+        };
+
+        function checkReady() {
+            if (imageLoaded && fontsLoaded) {
+                updatePreview(); // 初始繪製
+            }
+        }
+
+        function updatePreview() {
+            if (!imageLoaded) return;
+
+            // 根據原圖尺寸設定 Canvas 內部解析度，保證下載畫質
+            canvas.width = sourceImage.naturalWidth || 1200;
+            canvas.height = sourceImage.naturalHeight || 850;
+
+            // 1. 繪製底圖
+            ctx.drawImage(sourceImage, 0, 0, canvas.width, canvas.height);
+
+            // 取得輸入值
+            const name = document.getElementById('nameInput').value.trim();
+            const title = document.getElementById('titleInput').value.trim();
+
+            if (!name && !title) return; // 沒有文字就不用畫了
+
+            // --- 文字設定參數 ---
+            const textColor = '#e2b342'; // 接近原圖的金色
+            ctx.fillStyle = textColor;
+            ctx.textBaseline = 'bottom';
+            
+            // 增加微微的陰影讓文字立體且融入背景
+            ctx.shadowColor = 'rgba(0, 0, 0, 0.2)';
+            ctx.shadowBlur = 4;
+            ctx.shadowOffsetX = 1;
+            ctx.shadowOffsetY = 1;
+
+            // 預設字體大小基準 (依據圖片高度比例調整)
+            let baseFontSize = canvas.height * 0.055; 
+            
+            // 準備字體字串
+            const getFontString = (size) => `bold ${size}px 'Noto Sans TC', sans-serif`;
+
+            // 計算初始寬度
+            ctx.font = getFontString(baseFontSize);
+            let nameWidth = ctx.measureText(name).width;
+            
+            let titleFontSize = baseFontSize * 0.75; // 稱謂比姓名小一點點
+            ctx.font = getFontString(titleFontSize);
+            let titleWidth = title ? ctx.measureText(title).width : 0;
+
+            let gap = title ? (canvas.width * 0.005) : 0; // 姓名與稱謂之間的間距
+            let totalTextWidth = nameWidth + titleWidth + gap;
+
+            // --- 空間位置推算 ---
+            // "誠摯邀請" 與 "蒞臨" 之間的可放置區域
+            const startX_ratio = 0.67; // 預估 "誠摯邀請" 結束的 X 軸比例
+            const endX_ratio = 0.88;   // 預估 "蒞臨" 開始的 X 軸比例
+            const maxWidth = canvas.width * (endX_ratio - startX_ratio); 
+            
+            // 依比例縮小 (向兩側對齊/避免壓字)
+            let scale = 1;
+            if (totalTextWidth > maxWidth) {
+                scale = maxWidth / totalTextWidth;
+                baseFontSize *= scale;
+                titleFontSize *= scale;
+                gap *= scale;
+                
+                // 重新計算寬度
+                ctx.font = getFontString(baseFontSize);
+                nameWidth = ctx.measureText(name).width;
+                ctx.font = getFontString(titleFontSize);
+                titleWidth = title ? ctx.measureText(title).width : 0;
+                totalTextWidth = nameWidth + titleWidth + gap;
+            }
+
+            // --- 座標繪製 ---
+            // 將文字置中於可用區域
+            const centerX = canvas.width * ((startX_ratio + endX_ratio) / 2);
+            let drawX = centerX - (totalTextWidth / 2);
+            
+            // Y 軸高度 (預估 "誠摯邀請" 字體底部)
+            const drawY = canvas.height * 0.275; 
+
+            // 畫姓名
+            ctx.font = getFontString(baseFontSize);
+            ctx.fillText(name, drawX, drawY);
+
+            // 畫稱謂
+            if (title) {
+                drawX += nameWidth + gap;
+                ctx.font = getFontString(titleFontSize);
+                ctx.fillText(title, drawX, drawY);
+            }
+        }
+
+        function downloadImage() {
+            if (!imageLoaded) return;
+            
+            // 更新一次確保拿到最新畫面
+            updatePreview();
+
+            // 建立下載連結
+            const name = document.getElementById('nameInput').value.trim() || '貴賓';
+            const link = document.createElement('a');
+            link.download = `國泰證券_邀請卡_${name}.png`;
+            link.href = canvas.toDataURL('image/png');
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+    </script>
+</body>
+</html>
