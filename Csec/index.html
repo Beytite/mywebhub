@@ -72,12 +72,12 @@
             <!-- 右側：預覽畫布 -->
             <div class="w-full md:w-2/3 flex flex-col items-center justify-center bg-gray-100 rounded-xl border border-gray-200 overflow-hidden relative min-h-[300px]">
                 <!-- 載入中提示 -->
-                <div id="loadingMsg" class="absolute inset-0 flex items-center justify-center bg-gray-100 z-10">
-                    <span class="text-gray-500 font-medium animate-pulse">載入card中...</span>
+                <div id="loadingMsg" class="absolute inset-0 flex items-center justify-center bg-gray-100 z-10 w-full h-full">
+                    <span class="text-gray-500 font-medium animate-pulse">載入底圖中...</span>
                 </div>
                 
                 <!-- 圖片原始檔 (隱藏) - 加上明確的相對路徑 ./ -->
-                <img id="sourceImage" src="card.png" alt="card" crossorigin="anonymous">
+                <img id="sourceImage" src="./image/card.png" alt="card" crossorigin="anonymous">
                 
                 <!-- 繪製用的 Canvas -->
                 <canvas id="previewCanvas" class="max-w-full h-auto shadow-md"></canvas>
@@ -114,9 +114,43 @@
                 sourceImage.onload();
             }
 
-            // 圖片載入失敗處理 (加入詳細提示)
+            // 圖片載入失敗處理 (加入手動上傳備用方案)
             sourceImage.onerror = () => {
-                loadingMsg.innerHTML = '<div class="text-red-500 text-center px-4">找不到圖片檔案。<br><span class="text-sm text-gray-600">請確認 GitHub 上有 <b>image/card.png</b> 且<b>大小寫完全一致</b>。</span></div>';
+                loadingMsg.innerHTML = `
+                    <div class="text-red-500 text-center px-6 py-8 flex flex-col items-center gap-3 bg-white rounded-lg shadow-sm border border-red-100 m-4">
+                        <p class="font-bold text-lg">找不到預設背景圖片 ❌</p>
+                        <p class="text-sm text-gray-600 mb-2">無法在伺服器上找到 <b>image/card.png</b>。<br>GitHub 有嚴格的「大小寫」區分，且您的檔案可能是 <b>.jpg</b> 結尾。</p>
+                        
+                        <div class="w-full bg-green-50 p-4 rounded-lg border border-green-200 mt-2">
+                            <p class="text-sm text-green-800 font-medium mb-3">您現在可以直接手動選擇您的卡片底圖：</p>
+                            <label class="cursor-pointer inline-flex justify-center items-center bg-[#00a854] hover:bg-[#008c46] text-white font-bold py-2 px-6 rounded-lg shadow transition-colors w-full">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+                                </svg>
+                                點此上傳圖片
+                                <input type="file" id="localFallbackUpload" class="hidden" accept="image/*">
+                            </label>
+                        </div>
+                    </div>
+                `;
+
+                // 綁定手動上傳按鈕的事件
+                const uploadInput = document.getElementById('localFallbackUpload');
+                if (uploadInput) {
+                    uploadInput.addEventListener('change', (e) => {
+                        const file = e.target.files[0];
+                        if (file) {
+                            loadingMsg.innerHTML = '<span class="text-gray-500 font-medium animate-pulse">處理上傳圖片中...</span>';
+                            const reader = new FileReader();
+                            reader.onload = (event) => {
+                                // 將上傳的圖片轉為 Data URL 後重新餵給 sourceImage
+                                sourceImage.src = event.target.result; 
+                                // sourceImage 的 onload 事件會自動接手後續的畫布繪製
+                            };
+                            reader.readAsDataURL(file);
+                        }
+                    });
+                }
             };
 
             // 繪製合成圖片的核心函數
@@ -210,7 +244,7 @@
             // 下載功能
             downloadBtn.addEventListener('click', () => {
                 if (!isImageLoaded) {
-                    alert('圖片尚未載入完成，請稍候。');
+                    alert('圖片尚未載入完成或未上傳，請稍候。');
                     return;
                 }
                 
