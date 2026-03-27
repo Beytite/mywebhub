@@ -149,37 +149,34 @@
 
                 ctx.textBaseline = 'alphabetic';
 
-                // --- 3. 動態計算縮放比例 (確保文字不會超出範圍) ---
-                let currentScale = 1.0;
-                const minScale = 0.3; // 最小縮放限制，避免字太小看不見
-                
-                // 字體設定字串
+                // 字體設定字串函數
                 const getFontString = (size, scale) => `bold ${size * scale}px "Noto Sans TC", "Microsoft JhengHei", sans-serif`;
 
-                while (currentScale > minScale) {
-                    let totalWidth = 0;
-                    
-                    if (nameText) {
-                        ctx.font = getFontString(baseNameFontSize, currentScale);
-                        totalWidth += ctx.measureText(nameText).width;
-                    }
-                    
-                    if (titleText) {
-                        ctx.font = getFontString(baseTitleFontSize, currentScale);
-                        // 如果有名字也有稱謂，中間加一點間距
-                        if (nameText) totalWidth += (canvas.width * 0.005 * currentScale); 
-                        totalWidth += ctx.measureText(titleText).width;
-                    }
+                // --- 3. 動態計算縮放比例 (確保文字不會超出範圍並等比例縮小) ---
+                // 為了避免蓋到旁邊的字，保留一點安全邊距 (可用寬度的 95%)
+                const safeMaxWidth = maxAllowedWidth * 0.95;
+                let currentScale = 1.0;
+                const minScale = 0.3; // 最小縮放限制
 
-                    // 如果總寬度小於允許的空白區域，或者已經縮到最小，則停止計算
-                    if (totalWidth <= maxAllowedWidth) {
-                        break;
+                // 取得 100% 比例時的原始文字總寬度
+                ctx.font = getFontString(baseNameFontSize, 1.0);
+                const rawNameWidth = nameText ? ctx.measureText(nameText).width : 0;
+                ctx.font = getFontString(baseTitleFontSize, 1.0);
+                const rawTitleWidth = titleText ? ctx.measureText(titleText).width : 0;
+                const rawGapWidth = (nameText && titleText) ? (canvas.width * 0.005) : 0;
+                
+                const rawTotalWidth = rawNameWidth + rawTitleWidth + rawGapWidth;
+
+                // 判斷文字寬度是否超出安全可用寬度，若是則等比例縮小
+                if (rawTotalWidth > safeMaxWidth) {
+                    currentScale = safeMaxWidth / rawTotalWidth;
+                    if (currentScale < minScale) {
+                        currentScale = minScale; // 鎖定最小比例避免字太小
                     }
-                    currentScale -= 0.05; // 每次縮小 5%
                 }
 
                 // --- 4. 開始繪製文字 ---
-                // 為了讓文字在空隙中稍微置中，計算實際渲染的總寬度並加上起始偏移量
+                // 計算實際套用縮放後的渲染寬度
                 ctx.font = getFontString(baseNameFontSize, currentScale);
                 const finalNameWidth = nameText ? ctx.measureText(nameText).width : 0;
                 
@@ -189,13 +186,13 @@
                 const gapWidth = (nameText && titleText) ? (canvas.width * 0.005 * currentScale) : 0;
                 const totalRenderWidth = finalNameWidth + finalTitleWidth + gapWidth;
                 
-                // 計算起始 X 座標 (將文字區塊在可用空間內置中)
+                // 計算起始 X 座標 (將文字區塊在可用空間內「置中對齊」)
                 let startX = gapStartX + (maxAllowedWidth - totalRenderWidth) / 2;
 
                 // 畫姓名
                 if (nameText) {
                     ctx.font = getFontString(baseNameFontSize, currentScale);
-                    ctx.fillStyle = '#F59E0B'; // 橘黃色 (參考範例)
+                    ctx.fillStyle = '#EBCD85'; // 變更為指定的顏色
                     // 加入輕微陰影讓文字在背景上更立體 (可選)
                     ctx.shadowColor = 'rgba(0,0,0,0.3)';
                     ctx.shadowBlur = 4;
@@ -209,7 +206,7 @@
                 // 畫稱謂
                 if (titleText) {
                     ctx.font = getFontString(baseTitleFontSize, currentScale);
-                    ctx.fillStyle = '#FCD34D'; // 稍淺的橘黃色區隔層次
+                    ctx.fillStyle = '#EBCD85'; // 變更為指定的顏色
                     ctx.fillText(titleText, startX, textY);
                 }
                 
