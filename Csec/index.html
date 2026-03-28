@@ -197,22 +197,26 @@
                 // 計算起始 X 座標 (將整體文字區塊在可用空間內「置中對齊」)
                 let startX = gapStartX + (maxAllowedWidth - totalRenderWidth) / 2;
 
-                // 定義樣式設定函數：傳入文字大小(px)，自動換算漸層與陰影大小
-                function setDynamicStyle(fontSizePx) {
+                // 定義樣式設定函數：傳入文字大小(px)、文字區塊起點 X、文字寬度
+                function setDynamicStyle(fontSizePx, textStartX, textWidth) {
                     // 1. 等比例設定陰影 (文字越大、陰影越深越遠)
                     ctx.shadowColor = 'rgba(0, 0, 0, 0.5)'; // 50%透明度的黑色陰影
                     ctx.shadowOffsetX = fontSizePx * 0.06;  // X 軸位移為字體大小的 6%
                     ctx.shadowOffsetY = fontSizePx * 0.06;  // Y 軸位移為字體大小的 6%
                     ctx.shadowBlur = fontSizePx * 0.12;     // 模糊程度為字體大小的 12%
 
-                    // 2. 設定漸層色 (依文字高度精準對齊)
-                    // 範圍從文字頂部 (textY - fontSizePx) 到文字底部稍微往下
-                    const gradient = ctx.createLinearGradient(0, textY - (fontSizePx * 0.85), 0, textY + (fontSizePx * 0.1));
+                    // 2. 設定漸層色 (左下 到 右上)
+                    // 左下座標：X = 文字起點, Y = 文字底部
+                    // 右上座標：X = 文字終點, Y = 文字頂部
+                    const gradient = ctx.createLinearGradient(
+                        textStartX, textY + (fontSizePx * 0.1),               // 左下
+                        textStartX + textWidth, textY - (fontSizePx * 0.85)   // 右上
+                    );
                     
                     // 指定您的要求：#DBAF69 至 #FEFEAE 至 #DBAF69
-                    gradient.addColorStop(0, '#DBAF69');    // 頂部
+                    gradient.addColorStop(0, '#DBAF69');    // 左下
                     gradient.addColorStop(0.5, '#FEFEAE');  // 中間
-                    gradient.addColorStop(1, '#DBAF69');    // 底部
+                    gradient.addColorStop(1, '#DBAF69');    // 右上
 
                     ctx.fillStyle = gradient;
                 }
@@ -220,7 +224,8 @@
                 // 畫姓名
                 if (nameText) {
                     ctx.font = nameFontString;
-                    setDynamicStyle(nameFontSizePx); // 套用姓名專屬大小的樣式
+                    // 將當下的 startX 與計算好的寬度 finalNameWidth 傳入函數，讓漸層方向更準確
+                    setDynamicStyle(nameFontSizePx, startX, finalNameWidth); 
                     ctx.fillText(nameText, startX, textY);
                     startX += finalNameWidth + gapWidth; // 游標向右移
                 }
@@ -228,7 +233,8 @@
                 // 畫稱謂 (會依剩餘空間等比例縮小)
                 if (titleText) {
                     ctx.font = getTitleFontString(titleScale);
-                    setDynamicStyle(titleFontSizePx); // 套用稱謂專屬大小的樣式
+                    // 同理，傳入更新後的 startX 與稱謂寬度 finalTitleWidth
+                    setDynamicStyle(titleFontSizePx, startX, finalTitleWidth); 
                     ctx.fillText(titleText, startX, textY);
                 }
 
