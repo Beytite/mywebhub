@@ -18,27 +18,8 @@
     </style>
 </head>
 <body class="min-h-screen flex flex-col items-center py-10 px-4">
-<!-- 密碼驗證覆蓋層 -->
-    <div id="passwordOverlay" class="fixed inset-0 z-50 flex items-center justify-center bg-[#f3f4f6]">
-        <div class="bg-white p-8 rounded-2xl shadow-xl max-w-sm w-full mx-4 text-center">
-            <div class="mb-6">
-                <svg class="w-16 h-16 mx-auto text-[#00a854] mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path>
-                </svg>
-                <h2 class="text-2xl font-bold text-gray-800">請輸入存取密碼</h2>
-                <p class="text-sm text-gray-500 mt-2">＊網站為內部使用，請勿外流＊</p>
-            </div>
-            <div class="mb-5 text-left">
-                <input type="password" id="passwordInput" placeholder="請輸入密碼" 
-                    class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#00a854] focus:border-[#00a854] outline-none transition-all text-center tracking-[0.5em] text-lg">
-                <p id="passwordError" class="text-red-500 text-sm mt-2 text-center hidden">密碼錯誤，請重新輸入</p>
-            </div>
-            <button id="passwordSubmitBtn" class="w-full bg-[#00a854] hover:bg-[#008c46] text-white font-bold py-3 px-4 rounded-lg transition-colors shadow-md">
-                確認
-            </button>
-        </div>
-    </div>
-    <div id="mainAppContent" class="max-w-6xl w-full bg-white rounded-2xl shadow-xl overflow-hidden opacity-0 pointer-events-none transition-opacity duration-500">
+
+    <div class="max-w-6xl w-full bg-white rounded-2xl shadow-xl overflow-hidden">
         <!-- 標題區塊 -->
         <div class="bg-[#00a854] text-white p-6 text-center">
             <h1 class="text-2xl md:text-3xl font-bold tracking-wider">國泰證券 左營簡易分公司</h1>
@@ -117,49 +98,7 @@
             const loadingMsg = document.getElementById('loadingMsg');
 
             let isImageLoaded = false;
-            
-            // --- 密碼驗證邏輯 ---
-            const passwordOverlay = document.getElementById('passwordOverlay');
-            const passwordInput = document.getElementById('passwordInput');
-            const passwordSubmitBtn = document.getElementById('passwordSubmitBtn');
-            const passwordError = document.getElementById('passwordError');
-            const mainAppContent = document.getElementById('mainAppContent');
-            const CORRECT_PASSWORD = '8881';
 
-            // 自動 focus 密碼欄位
-            passwordInput.focus();
-
-            function verifyPassword() {
-                if (passwordInput.value === CORRECT_PASSWORD) {
-                    // 密碼正確：淡出覆蓋層，顯示主內容
-                    passwordOverlay.classList.add('opacity-0', 'pointer-events-none');
-                    setTimeout(() => {
-                        passwordOverlay.style.display = 'none';
-                    }, 500);
-                    
-                    mainAppContent.classList.remove('opacity-0', 'pointer-events-none');
-                } else {
-                    // 密碼錯誤：顯示錯誤提示並清空輸入框
-                    passwordError.classList.remove('hidden');
-                    passwordInput.value = '';
-                    passwordInput.focus();
-                }
-            }
-
-            passwordSubmitBtn.addEventListener('click', verifyPassword);
-
-            // 支援按下 Enter 鍵送出
-            passwordInput.addEventListener('keypress', (e) => {
-                if (e.key === 'Enter') {
-                    verifyPassword();
-                }
-            });
-
-            // 重新輸入時隱藏錯誤提示
-            passwordInput.addEventListener('input', () => {
-                passwordError.classList.add('hidden');
-            });
-            // --- 密碼邏輯結束 ---
             // 當圖片載入完成時初始化畫布
             sourceImage.onload = () => {
                 isImageLoaded = true;
@@ -199,9 +138,8 @@
                 if (!nameText && !titleText) return;
 
                 // --- 2. 設定繪製座標參數 (使用相對比例以適應不同解析度) ---
-                // 將整體 X 座標往右移 (原為0.685 -> 改為0.705)，避免蓋到「誠摯邀請」
                 const gapStartX = canvas.width * 0.697; 
-                const gapEndX = canvas.width * 0.870; // 同步稍微往右推
+                const gapEndX = canvas.width * 0.870; 
                 const textY = canvas.height * 0.268;    
                 
                 const maxAllowedWidth = gapEndX - gapStartX; // 允許的最大文字寬度
@@ -209,6 +147,9 @@
                 // 設定姓名大小：若為四個字則縮小為 55pt，否則維持 60pt
                 const nameFontSize = nameText.length === 4 ? 55 : 60;
                 const nameFontString = `bold ${nameFontSize}pt "Noto Sans TC", "Microsoft JhengHei", sans-serif`;
+                // 將 pt 轉換為 px 的估算值，用於精確計算陰影與漸層比例 (1pt ≒ 1.333px)
+                const nameFontSizePx = nameFontSize * 1.333; 
+
                 // 設定職稱的基礎字體大小 (相對圖片高度)
                 const baseTitleFontSize = canvas.height * 0.035; 
 
@@ -239,26 +180,47 @@
                 // 如果職稱原始寬度超過剩餘的空間，才等比例縮小職稱
                 if (titleText && rawTitleWidth > remainingTitleWidth) {
                     titleScale = remainingTitleWidth / rawTitleWidth;
-                    // 若縮小比例過低，則鎖在最低下限，避免字太小看不見
                     if (titleScale < minScale) {
                         titleScale = minScale; 
                     }
                 }
 
-                // --- 4. 開始繪製文字 ---
-                // 計算實際套用縮放後的職稱渲染寬度
+                // --- 4. 開始繪製文字 (加入動態漸層與等比例陰影) ---
+                
+                // 計算實際套用縮放後的職稱渲染寬度與大小
                 ctx.font = getTitleFontString(titleScale);
                 const finalTitleWidth = titleText ? ctx.measureText(titleText).width : 0;
+                const titleFontSizePx = baseTitleFontSize * titleScale;
                 
                 const totalRenderWidth = finalNameWidth + finalTitleWidth + gapWidth;
                 
                 // 計算起始 X 座標 (將整體文字區塊在可用空間內「置中對齊」)
                 let startX = gapStartX + (maxAllowedWidth - totalRenderWidth) / 2;
 
+                // 定義樣式設定函數：傳入文字大小(px)，自動換算漸層與陰影大小
+                function setDynamicStyle(fontSizePx) {
+                    // 1. 等比例設定陰影 (文字越大、陰影越深越遠)
+                    ctx.shadowColor = 'rgba(0, 0, 0, 0.5)'; // 50%透明度的黑色陰影
+                    ctx.shadowOffsetX = fontSizePx * 0.06;  // X 軸位移為字體大小的 6%
+                    ctx.shadowOffsetY = fontSizePx * 0.06;  // Y 軸位移為字體大小的 6%
+                    ctx.shadowBlur = fontSizePx * 0.12;     // 模糊程度為字體大小的 12%
+
+                    // 2. 設定漸層色 (依文字高度精準對齊)
+                    // 範圍從文字頂部 (textY - fontSizePx) 到文字底部稍微往下
+                    const gradient = ctx.createLinearGradient(0, textY - (fontSizePx * 0.85), 0, textY + (fontSizePx * 0.1));
+                    
+                    // 指定您的要求：#DBAF69 至 #FEFEAE 至 #DBAF69
+                    gradient.addColorStop(0, '#DBAF69');    // 頂部
+                    gradient.addColorStop(0.5, '#FEFEAE');  // 中間
+                    gradient.addColorStop(1, '#DBAF69');    // 底部
+
+                    ctx.fillStyle = gradient;
+                }
+
                 // 畫姓名
                 if (nameText) {
                     ctx.font = nameFontString;
-                    ctx.fillStyle = '#EBCD85'; // 指定顏色
+                    setDynamicStyle(nameFontSizePx); // 套用姓名專屬大小的樣式
                     ctx.fillText(nameText, startX, textY);
                     startX += finalNameWidth + gapWidth; // 游標向右移
                 }
@@ -266,9 +228,15 @@
                 // 畫稱謂 (會依剩餘空間等比例縮小)
                 if (titleText) {
                     ctx.font = getTitleFontString(titleScale);
-                    ctx.fillStyle = '#EBCD85'; // 指定顏色
+                    setDynamicStyle(titleFontSizePx); // 套用稱謂專屬大小的樣式
                     ctx.fillText(titleText, startX, textY);
                 }
+
+                // 重設陰影，避免影響後續或其他可能的 Canvas 繪製操作
+                ctx.shadowColor = 'transparent';
+                ctx.shadowBlur = 0;
+                ctx.shadowOffsetX = 0;
+                ctx.shadowOffsetY = 0;
             }
 
             // 綁定事件 - 僅保留點擊預覽按鈕時觸發
@@ -277,7 +245,6 @@
             // 下載功能
             downloadBtn.addEventListener('click', () => {
                 if (!isImageLoaded) {
-                    // 修改了這裡的提示文字，因為不再有上傳功能
                     alert('底圖尚未載入完成，請稍候或檢查網路狀態。');
                     return;
                 }
