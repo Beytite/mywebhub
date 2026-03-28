@@ -197,7 +197,7 @@
                 // 畫姓名
                 if (nameText) {
                     ctx.font = nameFontString;
-                    ctx.fillStyle = '#EBCD85'; // 指定顏色
+                    ctx.fillStyle = '#FEF5A4'; // 指定顏色
                     ctx.fillText(nameText, startX, textY);
                     startX += finalNameWidth + gapWidth; // 游標向右移
                 }
@@ -205,7 +205,7 @@
                 // 畫稱謂 (會依剩餘空間等比例縮小)
                 if (titleText) {
                     ctx.font = getTitleFontString(titleScale);
-                    ctx.fillStyle = '#EBCD85'; // 指定顏色
+                    ctx.fillStyle = '#FEF5A4'; // 指定顏色
                     ctx.fillText(titleText, startX, textY);
                 }
             }
